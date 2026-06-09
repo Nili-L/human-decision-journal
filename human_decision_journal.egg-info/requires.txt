@@ -1,5 +1,0 @@
-mcp>=1.2.0
-filelock>=3.13
-
-[dev]
-pytest>=8.0

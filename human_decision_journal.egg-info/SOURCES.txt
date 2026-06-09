@@ -1,8 +1,0 @@
-pyproject.toml
-human_decision_journal.egg-info/PKG-INFO
-human_decision_journal.egg-info/SOURCES.txt
-human_decision_journal.egg-info/dependency_links.txt
-human_decision_journal.egg-info/entry_points.txt
-human_decision_journal.egg-info/requires.txt
-human_decision_journal.egg-info/top_level.txt
-server/__init__.py
