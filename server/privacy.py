@@ -23,6 +23,21 @@ _CODE_EXTENSIONS = frozenset(
     "jpeg gif pdf kt swift php pl lua vue tf env".split()
 )
 
+# Recognized real TLDs.  A bare-domain match is only emitted as a finding when
+# its final label (after the last '.', lowercased) appears here.  Labels that
+# are common code/file extensions (py, md, js, go, rs, sh, etc.) are excluded
+# so that Python module paths (server.main), git config keys (user.email,
+# core.hooksPath), and filenames never produce false positives.
+# Residual limitation: bare domains on TLDs outside this set (mentioned
+# without an email or URL) won't be flagged — acceptable, since the email/URL
+# vectors are TLD-agnostic and cover the main leak paths.
+_KNOWN_TLDS = {
+    "com", "org", "net", "edu", "gov", "mil", "int", "io", "co", "ai", "app",
+    "dev", "info", "biz", "me", "tv", "us", "uk", "ca", "de", "fr", "eu", "au",
+    "in", "jp", "cn", "br", "nl", "ru", "ch", "es", "it", "se", "no", "fi", "dk",
+    "pl", "ie", "nz", "za", "cloud", "tech", "xyz", "online", "site", "store",
+}
+
 # IPv4: not preceded or followed by additional dotted-number segments,
 # to avoid matching prefixes of version strings like 1.2.3.4.5.
 _IPV4 = re.compile(r"(?<!\d)(?<!\d\.)(?:\d{1,3}\.){3}\d{1,3}(?!\.\d)(?!\d)")
@@ -94,6 +109,11 @@ def scan(text: str, owner_identities: list[str], dev_domains: list[str]) -> list
         # Skip if the final label (TLD) is a known code/doc file extension.
         tld = host.rsplit(".", 1)[-1]
         if tld in _CODE_EXTENSIONS:
+            continue
+        # Only emit a finding when the final label is a recognized real TLD.
+        # This prevents dev identifiers like server.main, user.email, and
+        # core.hooksPath from being flagged as domains.
+        if tld not in _KNOWN_TLDS:
             continue
         # Skip if this token is fully contained within an email address.
         in_email = any(es <= m.start() and m.end() <= ee for es, ee in email_spans)

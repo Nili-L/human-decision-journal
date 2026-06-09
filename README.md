@@ -32,21 +32,19 @@ If you do **not** already have a journal, this is the whole flow:
 
 ## Register the MCP server
 
-**Claude Desktop / Claude Code** (`claude_desktop_config.json` or `.mcp.json`) — `command` is `python`, `args` is `["-m", "server/main"]` (the `/` is a visual placeholder; use a dot when you paste it), `cwd` is the absolute path to this repo:
+**Claude Desktop / Claude Code** (`claude_desktop_config.json` or `.mcp.json`) — `command` is `python`, `args` is `["-m", "server.main"]`, `cwd` is the absolute path to this repo:
 
 ```json
 {
   "mcpServers": {
     "decision-journal": {
       "command": "python",
-      "args": ["-m", "server/main"],
+      "args": ["-m", "server.main"],
       "cwd": "/absolute/path/to/human-decision-journal"
     }
   }
 }
 ```
-
-> **Paste reminder:** the args value shown above uses `/` as a placeholder separator. Use dot notation (`server` + `.` + `main`) when you add this to your config file.
 
 **Cursor / Zed / OpenCode:** add the same `command`/`args`/`cwd` under each tool's MCP config section.
 

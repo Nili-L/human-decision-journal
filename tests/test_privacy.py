@@ -43,6 +43,9 @@ BENIGN = [
     "Touched main.js, styles.css, routes.ts and utils.go.",
     "Build timing was 12:34:56 across feed:face nodes.",
     "Cited RFC-2616 and PR-12 in the notes.",
+    "Run python -m server.main to start it.",
+    "Set git config user.email and core.hooksPath = .githooks.",
+    "Edited server/privacy.py and pyproject.toml.",
 ]
 
 SENSITIVE = [
@@ -57,6 +60,8 @@ SENSITIVE = [
     ("key AKIAIOSFODNN7EXAMPLE", "secret"),
     ("token ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789", "secret"),
     ("db at fe80::1ff:fe23:4567:890a today", "ipv6"),
+    ("their site example.io was slow", "domain"),
+    ("portal at acme-corp.com down", "domain"),
 ]
 
 def test_benign_inputs_have_no_findings():
