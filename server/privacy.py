@@ -82,6 +82,10 @@ def _luhn_ok(digits: str) -> bool:
         total += n
     return total % 10 == 0
 
+def _domain_allowlisted(host: str, dev: set[str]) -> bool:
+    host = host.lower()
+    return any(host == d or host.endswith("." + d) for d in dev)
+
 def scan(text: str, owner_identities: list[str], dev_domains: list[str]) -> list[Finding]:
     owners = {o.lower() for o in owner_identities}
     dev = {d.lower() for d in dev_domains}
@@ -93,15 +97,23 @@ def scan(text: str, owner_identities: list[str], dev_domains: list[str]) -> list
     # Collect all email spans first so bare-domain scan can skip them.
     email_spans = []
     for m in _EMAIL.finditer(text):
+        val = m.group(0)
         email_spans.append((m.start(), m.end()))
-        if m.group(0).lower() not in owners:
-            add("email", m)
+        if val.lower() in owners:
+            continue
+        dom = val.split("@", 1)[1]
+        if _domain_allowlisted(dom, dev):
+            continue
+        if dom.rsplit(".", 1)[-1].isdigit():
+            continue
+        add("email", m)
 
     # Collect URL spans; add domain findings for non-allowlisted hosts.
     url_spans = []
     for m in _URL.finditer(text):
         url_spans.append((m.start(), m.end()))
-        if m.group(1).lower() not in dev:
+        host = m.group(1).lower()
+        if not _domain_allowlisted(host, dev):
             add("domain", m, m.group(1))
 
     for m in _BARE_DOMAIN.finditer(text):
@@ -124,7 +136,7 @@ def scan(text: str, owner_identities: list[str], dev_domains: list[str]) -> list
         in_url = any(us <= m.start() and m.end() <= ue for us, ue in url_spans)
         if in_url:
             continue
-        if host not in dev:
+        if not _domain_allowlisted(host, dev):
             add("domain", m, host)
 
     for m in _IPV4.finditer(text):

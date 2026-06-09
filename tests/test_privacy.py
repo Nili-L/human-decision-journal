@@ -77,3 +77,22 @@ def test_no_duplicate_findings():
     fs = scan("http://acme.com/path", OWNER, DEV)
     seen = [(f.kind, f.value, f.start, f.end) for f in fs]
     assert len(seen) == len(set(seen))
+
+
+def test_dev_emails_versions_and_cdn_subdomains_pass():
+    dev = ["github.com", "bitbucket.org", "gitlab.com", "localhost", "maxcdn.com"]
+    benign = [
+        "remote git@bitbucket.org:ironscalesdev/kb.git",
+        "loaded bootstrap@4.6.2 and mermaid@11.15.0 from cdn",
+        "served from oss.maxcdn.com today",
+        "see gist.github.com/Jo/abc",
+    ]
+    for t in benign:
+        assert scan(t, OWNER, dev) == [], f"false positive: {t!r} -> {scan(t, OWNER, dev)}"
+
+
+def test_real_emails_and_domains_still_flagged():
+    dev = ["github.com", "bitbucket.org", "maxcdn.com"]
+    assert "email" in {f.kind for f in scan("mail alice@acme-corp.com", OWNER, dev)}
+    assert "email" in {f.kind for f in scan("colleague bob@ironscales.com", OWNER, dev)}  # ironscales.com not a dev domain
+    assert "domain" in {f.kind for f in scan("their site acme-corp.com", OWNER, dev)}
