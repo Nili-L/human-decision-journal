@@ -36,6 +36,7 @@ class Journal:
     entries: list[Entry] = field(default_factory=list)
     repo_category: dict[str, str] = field(default_factory=dict)
     repo_order: dict[str, list[str]] = field(default_factory=dict)
+    repo_blurb: dict[str, str] = field(default_factory=dict)
 
 CATEGORIES = ("Work", "Personal")
 _ENTRY_RE = re.compile(r"^### (\d{4}-\d{2}-\d{2}) — (.*)$")
@@ -84,6 +85,9 @@ def render(j: Journal, vocab=None) -> str:
         parts.append(f"# {cat}\n")
         for r in repos:
             parts.append(f"## {r}\n")
+            blurb = j.repo_blurb.get(r, "")
+            if blurb:
+                parts.append(blurb + "\n")
             for e in [e for e in j.entries if e.repo == r]:
                 parts.append(render_entry(e).rstrip() + "\n")
     return "\n".join(parts).rstrip() + "\n"
@@ -120,6 +124,21 @@ def parse(text: str) -> Journal:
                 j.repo_order.setdefault(cat, [])
                 if repo not in j.repo_order[cat]:
                     j.repo_order[cat].append(repo)
+            # Capture blurb lines between the ## heading and the first ### entry
+            blurb_lines = []
+            k = i + 1
+            while k < len(lines):
+                l = lines[k]
+                if (l.startswith("### ")
+                        or l.startswith("## ")
+                        or (l.startswith("# ") and l[2:].strip() in CATEGORIES)):
+                    break
+                blurb_lines.append(l)
+                k += 1
+            blurb_text = "\n".join(blurb_lines).strip()
+            if blurb_text and repo:
+                j.repo_blurb[repo] = blurb_text
+            i = k - 1
         elif _ENTRY_RE.match(line):
             m = _ENTRY_RE.match(line)
             block = [line]

@@ -37,3 +37,29 @@ def test_header_preserved_on_render():
     assert j.header.startswith("# Decisions Journal")
     j.header = j.header + "\nCUSTOM LINE\n"
     assert "CUSTOM LINE" in render(j, VOCAB)
+
+def test_repo_blurb_preserved_roundtrip():
+    src = new_journal_text()
+    # build a journal with a repo that has a blurb + one entry, via raw text
+    body = (
+        "# Work\n\n"
+        "## acme\n\n"
+        "> Solo-built thing.\n>\n> **Authorship:** all Josh.\n\n"
+        "### 2026-02-01 — did a thing\n\n"
+        "**Tags:** domain: backend · activity: design\n"
+    )
+    # splice the body after the timeline marker of an empty journal
+    from server.journal import TL_END
+    text = src.split(TL_END)[0] + TL_END + "\n\n" + body
+    j = parse(text)
+    assert j.repo_blurb.get("acme", "").startswith("> Solo-built thing.")
+    assert "**Authorship:** all Josh." in j.repo_blurb["acme"]
+    assert len(j.entries) == 1 and j.entries[0].repo == "acme"
+    out = render(j, VOCAB)
+    assert "> Solo-built thing." in out and "**Authorship:** all Josh." in out
+    # blurb appears after the ## acme heading and before the entry
+    assert out.index("## acme") < out.index("Solo-built thing") < out.index("### 2026-02-01")
+    # round-trip stable
+    j2 = parse(out)
+    assert j2.repo_blurb.get("acme", "").startswith("> Solo-built thing.")
+    assert len(j2.entries) == 1
