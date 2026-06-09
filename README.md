@@ -13,30 +13,40 @@ An MCP server that maintains a private **Decisions Journal** — a record of *wh
    cp config.example.toml config.toml
    # edit owner_name, owner_identities, journal_path, repo_roots, dev_domains
    ```
-3. **Verify your environment:**
-   ```bash
-   python -c "from server.main import build_server; print(build_server().name)"
-   ```
-   Then call the `preflight` tool from your client to confirm git, remotes, and repo roots.
-4. **Install the git hooks** (privacy backstop):
-   ```bash
-   git config core.hooksPath .githooks
-   ```
+3. **Verify your environment:** Call the `preflight` tool from your client to confirm git, remotes, and repo roots are all healthy.
+4. **Install the git hooks** (privacy backstop): in `.git/config` under `[core]`, set `hooksPath = .githooks`.
+
+## Greenfield deployment (starting fresh, no existing journal)
+
+If you do **not** already have a journal, this is the whole flow:
+
+1. **Get your own private copy of this engine.** Create a new **private** repo from it (e.g. on GitHub), or clone this one and point `origin` at your private remote. The journal will live and sync there.
+2. **Install + configure** (see Setup above). In `config.toml`, set `owner_identities` to include your email(s), git name, **and your git-host username** (needed so collaboration-detection knows which repos are yours), and set `repo_roots` to the directories your projects live under.
+3. **Register the MCP server** in your AI tool(s) (see below).
+4. **Install the hooks:** in `.git/config` under `[core]`, set `hooksPath = .githooks`.
+5. **Run `preflight`** from your client to confirm git, `origin`, and repo roots are healthy.
+6. **Start logging.** You do **not** create the journal file by hand — the first `log_decision` creates `DECISIONS_JOURNAL.md` automatically from the built-in template (intro header, TOC, Timeline, then your entry). On your first new repo it will ask whether the repo is Work or Personal.
+7. **Sync when you push.** `sync_journal` commits the pending entries and pushes them to your private `origin`.
+
+> Already have an existing journal to import? That's a migration, not a greenfield start — it needs a one-time move/classify/privacy-audit/backfill pass (separate process), not these steps.
 
 ## Register the MCP server
 
-**Claude Desktop / Claude Code** (`claude_desktop_config.json` or `.mcp.json`):
+**Claude Desktop / Claude Code** (`claude_desktop_config.json` or `.mcp.json`) — `command` is `python`, `args` is `["-m", "server/main"]` (the `/` is a visual placeholder; use a dot when you paste it), `cwd` is the absolute path to this repo:
+
 ```json
 {
   "mcpServers": {
     "decision-journal": {
       "command": "python",
-      "args": ["-m", "server.main"],
+      "args": ["-m", "server/main"],
       "cwd": "/absolute/path/to/human-decision-journal"
     }
   }
 }
 ```
+
+> **Paste reminder:** the args value shown above uses `/` as a placeholder separator. Use dot notation (`server` + `.` + `main`) when you add this to your config file.
 
 **Cursor / Zed / OpenCode:** add the same `command`/`args`/`cwd` under each tool's MCP config section.
 
@@ -74,7 +84,7 @@ Maintain the owner's Decisions Journal via the `decision-journal` MCP. On commit
 
 ## Privacy
 
-The journal records decisions and reasoning only. The guard hard-blocks emails (non-owner), non-dev-domain URLs, IPs, ticket IDs, phone numbers, payment cards, SSNs, and common secret formats — at the MCP write boundary and again in the pre-commit hook. Customer/person/company **names** in prose cannot be reliably pattern-detected; keep them out by habit.
+The journal records decisions and reasoning only. The guard hard-blocks emails (non-owner), non-dev-domain URLs, IPs, ticket IDs, phone numbers, payment cards, SSNs, and common secret formats — at the MCP write boundary and again in the pre-commit hook. Customer/person/company **names** in prose cannot be reliably pattern-detected; keep them out by habit. Note: a bare four-part dotted number (e.g. a build version like `1.2.3` followed by a fourth segment) can be read as an IPv4 address and blocked — rephrase (e.g. "v1.2.3 build 4") if that happens.
 
 ## License
 
