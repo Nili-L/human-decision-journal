@@ -91,7 +91,13 @@ class JournalService:
             jr = self._load_journal()
             n = len(jr.entries)
         out = gitops.sync(self.cfg.journal_path, "journal: sync")
-        return {"status": "synced", "message": f"journal pushed: {n} entries ({out})"}
+        if out == "pushed to origin":
+            status, verb = "synced", "pushed"
+        elif "fail" in out.lower():
+            status, verb = "error", "sync failed"
+        else:
+            status, verb = "local_only", "saved locally"
+        return {"status": status, "message": f"journal {verb}: {n} entries ({out})"}
 
     def get_latest_entry(self, repo: str) -> dict:
         jr = self._load_journal()

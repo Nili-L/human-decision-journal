@@ -25,15 +25,13 @@ def is_collaboration(repo_path: Path, owner_identities: list[str]) -> bool:
     owners = {o.lower() for o in owner_identities}
     for remote in ("upstream", "origin"):
         url = _git_out(repo_path, "remote", "get-url", remote)
-        if url:
-            tail = url.split(":")[-1] if ":" in url and "//" not in url else url.split("//")[-1]
-            parts = [p for p in tail.replace(":", "/").split("/") if p]
-            owner_seg = parts[-2].lower() if len(parts) >= 2 else ""
-            if owner_seg and owner_seg not in owners:
-                if not any(owner_seg in o or o in owner_seg for o in owners):
-                    return True
-            else:
-                return False
+        if not url:
+            continue
+        tail = url.split(":")[-1] if ":" in url and "//" not in url else url.split("//")[-1]
+        parts = [p for p in tail.replace(":", "/").split("/") if p]
+        owner_seg = parts[-2].lower() if len(parts) >= 2 else ""
+        if owner_seg:
+            return owner_seg not in owners
     log = _git_out(repo_path, "shortlog", "-sne", "HEAD")
     if not log:
         return False

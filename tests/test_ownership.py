@@ -29,3 +29,14 @@ def test_fork_of_others_is_collaboration(tmp_path):
     repo = tmp_path / "theirs"
     _make_repo(repo, "other@y.com", "git@github.com:SomeoneElse/theirs.git")
     assert is_collaboration(repo, ["jo@x.com", "Jo"]) is True
+
+def test_substring_identity_does_not_suppress_collaboration(tmp_path):
+    repo = tmp_path / "theirs2"
+    _make_repo(repo, "x@y.com", "git@github.com:someoneelse/theirs2.git")
+    # owner identity "me" is a substring of "someoneelse" — must NOT be treated as owner
+    assert is_collaboration(repo, ["me@y.com", "me"]) is True
+
+def test_owner_username_match_is_not_collaboration(tmp_path):
+    repo = tmp_path / "mine2"
+    _make_repo(repo, "me@y.com", "git@github.com:me/mine2.git")
+    assert is_collaboration(repo, ["me@y.com", "me"]) is False

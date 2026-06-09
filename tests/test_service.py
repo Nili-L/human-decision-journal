@@ -51,6 +51,14 @@ def test_existing_repo_no_recategory(tmp_path):
     res = svc.log_decision(repo="acme", **BASE)
     assert res["status"] == "logged"
 
+def test_sync_status_local_only_without_git(tmp_path):
+    # journal_path in a non-git temp dir → sync cannot push
+    svc = make_service(tmp_path)
+    svc.log_decision(repo="acme", category="work", **BASE)
+    res = svc.sync_journal()
+    assert res["status"] in ("local_only", "error")
+    assert "entries" in res["message"]
+
 def test_collaboration_autotag(tmp_path):
     import subprocess
     roots = tmp_path / "roots"; repo = roots / "theirs"; repo.mkdir(parents=True)
