@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Hard-block customer data in staged changes.
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+files=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$files" ] && exit 0
+fail=0
+for f in $files; do
+  case "$f" in *.md) ;; *) continue ;; esac
+  git show ":$f" | python3 "$root/scripts/scan.py" - || fail=1
+done
+if [ "$fail" -ne 0 ]; then
+  echo "pre-commit: customer-data finding(s) above — sanitize before committing." >&2
+  exit 1
+fi
