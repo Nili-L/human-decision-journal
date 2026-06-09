@@ -1,0 +1,9 @@
+owner_name = "Your Name"
+# Emails and git author names that count as YOU (allowlisted by the privacy guard as authorship).
+owner_identities = ["you@example.com", "Your Name"]
+# Path to the journal file (relative to repo root or absolute).
+journal_path = "DECISIONS_JOURNAL.md"
+# Directories under which your repos live; used to resolve a repo name to a path.
+repo_roots = ["~/code"]
+# Code-hosting/dev domains the privacy guard will NOT block (you legitimately cite these).
+dev_domains = ["github.com", "bitbucket.org", "gitlab.com", "localhost"]

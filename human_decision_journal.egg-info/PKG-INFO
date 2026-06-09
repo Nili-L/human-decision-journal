@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: human-decision-journal
+Version: 0.1.0
+Summary: MCP engine that maintains a private Decisions Journal across AI tools
+Requires-Python: >=3.11
+Requires-Dist: mcp>=1.2.0
+Requires-Dist: filelock>=3.13
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"

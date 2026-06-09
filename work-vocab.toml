@@ -1,0 +1,21 @@
+[domains]
+architecture = "system structure, how components fit, cross-cutting design"
+backend = "server-side logic, services, APIs"
+frontend = "client UI implementation"
+ux = "interaction/visual design, usability"
+database = "data modeling, schemas, queries, migrations"
+data-pipeline = "ETL, ingestion, batch/stream data processing"
+ml-ai = "models, embeddings, prompts, evaluation"
+devops-infra = "CI/CD, deployment, environments, observability"
+security = "threat modeling, hardening, secrets, privacy controls"
+documentation = "user/product/technical docs and content"
+
+[activities]
+design = "planning, modeling, deciding structure before building"
+implementation = "building net-new code or content"
+debugging = "diagnosing and fixing defects"
+testing-qa = "writing/running tests, QA, verification"
+code-review = "reviewing code (own or others')"
+refactoring = "restructuring/maintaining existing code without changing behavior"
+research = "investigation, evaluation, spikes, comparisons, learning"
+collaboration = "contributing on a fork or branch of someone else's repo — auto-applied by the server from repo ownership"

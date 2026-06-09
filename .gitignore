@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# private/owner-only — never tracked in the public engine
+config.toml
+work-vocab.local.toml
+DECISIONS_JOURNAL.md
+!examples/DECISIONS_JOURNAL.sample.md
