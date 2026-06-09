@@ -32,7 +32,8 @@ def build_timeline(entries) -> str:
             seg = []
             if doms: seg.append("domain: " + ", ".join(doms))
             if acts: seg.append("activity: " + ", ".join(acts))
-            line = f"- {date} — " + " · ".join(seg) + f" — {repo}"
+            head = " · ".join(seg)
+            line = f"- {date} — {head} — {repo}" if head else f"- {date} — {repo}"
             if tools:
                 line += f" — tools: {', '.join(tools)}"
             lines.append(line)
