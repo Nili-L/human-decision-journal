@@ -12,9 +12,36 @@ class Finding:
 _EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
 _URL = re.compile(r"\bhttps?://([\w.-]+)(?:/\S*)?", re.I)
 _BARE_DOMAIN = re.compile(r"\b([a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.[a-z]{2,})\b", re.I)
-_IPV4 = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
-_IPV6 = re.compile(r"\b(?:[0-9a-f]{1,4}:){2,7}[0-9a-f]{1,4}\b", re.I)
-_TICKET = re.compile(r"(?:#\d{3,})|(?:\b[A-Z]{2,5}-\d{2,}\b)")
+
+# Known code/doc file extensions — a bare-domain match whose final label is one
+# of these is almost certainly a filename, not a real domain.  We skip it.
+# Residual gap: a customer domain whose TLD collides with a code extension
+# (e.g. acme.sh, acme.rs) may be skipped — acceptable per design.
+_CODE_EXTENSIONS = frozenset(
+    "py md toml js ts tsx jsx mjs cjs css scss go rb rs java cpp cc hpp h "
+    "json yaml yml sh bash txt ini cfg lock sql html xml csv svg png jpg "
+    "jpeg gif pdf kt swift php pl lua vue tf env".split()
+)
+
+# IPv4: not preceded or followed by additional dotted-number segments,
+# to avoid matching prefixes of version strings like 1.2.3.4.5.
+_IPV4 = re.compile(r"(?<!\d)(?<!\d\.)(?:\d{1,3}\.){3}\d{1,3}(?!\.\d)(?!\d)")
+
+# IPv6: only match when the candidate contains '::' (compressed notation) OR
+# is a full 8-group address.  This prevents ordinary colon-delimited tokens
+# like "12:34:56" or "feed:face:1234:5678" from being flagged.
+_IPV6 = re.compile(
+    r"\b(?:"
+    r"(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}"     # full 8-group
+    r"|(?:[0-9a-f]{0,4}::(?:[0-9a-f]{1,4}:)*[0-9a-f]{0,4})"  # :: compressed
+    r"|(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4})*::(?:[0-9a-f]{1,4}:)*[0-9a-f]{0,4})"
+    r")\b",
+    re.I,
+)
+
+# Ticket: exclude well-known dev/standards prefixes so RFC-2616, PR-12,
+# CVE-2021-1234 are not caught.  Real support IDs like ZD-9981 still match.
+_TICKET = re.compile(r"(?:#\d{3,})|(?:\b(?!RFC-|PR-|CVE-)(?:[A-Z]{2,5})-\d{2,}\b)")
 _PHONE = re.compile(r"\b(?:\+?\d{1,2}[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b")
 _SSN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 _CARD = re.compile(r"\b(?:\d[ -]?){13,16}\b")
@@ -54,15 +81,32 @@ def scan(text: str, owner_identities: list[str], dev_domains: list[str]) -> list
         email_spans.append((m.start(), m.end()))
         if m.group(0).lower() not in owners:
             add("email", m)
+
+    # Collect URL spans; add domain findings for non-allowlisted hosts.
+    url_spans = []
     for m in _URL.finditer(text):
+        url_spans.append((m.start(), m.end()))
         if m.group(1).lower() not in dev:
             add("domain", m, m.group(1))
+
     for m in _BARE_DOMAIN.finditer(text):
         host = m.group(1).lower()
-        # Skip if this domain token is contained within an email address.
+        # Skip if the final label (TLD) is a known code/doc file extension.
+        tld = host.rsplit(".", 1)[-1]
+        if tld in _CODE_EXTENSIONS:
+            continue
+        # Skip if this token is fully contained within an email address.
         in_email = any(es <= m.start() and m.end() <= ee for es, ee in email_spans)
-        if host not in dev and not in_email:
+        if in_email:
+            continue
+        # Skip if this token is contained within an already-matched URL span
+        # (prevents duplicates like acme.com being found both via _URL and here).
+        in_url = any(us <= m.start() and m.end() <= ue for us, ue in url_spans)
+        if in_url:
+            continue
+        if host not in dev:
             add("domain", m, host)
+
     for m in _IPV4.finditer(text):
         if all(0 <= int(p) <= 255 for p in m.group(0).split(".")):
             add("ipv4", m)
@@ -77,7 +121,27 @@ def scan(text: str, owner_identities: list[str], dev_domains: list[str]) -> list
     for m in _CARD.finditer(text):
         if _luhn_ok(m.group(0)):
             add("card", m)
+
+    # Collect secret spans to suppress email/domain findings inside them
+    # (e.g. connection strings contain both a domain and credentials).
+    secret_spans = []
     for rx in _SECRETS:
         for m in rx.finditer(text):
             add("secret", m)
-    return out
+            secret_spans.append((m.start(), m.end()))
+
+    # Deduplicate by (kind, value, start, end) and suppress email/domain
+    # findings that are fully contained within a secret span.
+    seen: set[tuple] = set()
+    deduped: list[Finding] = []
+    for f in out:
+        key = (f.kind, f.value, f.start, f.end)
+        if key in seen:
+            continue
+        seen.add(key)
+        if f.kind in ("email", "domain"):
+            in_secret = any(ss <= f.start and f.end <= se for ss, se in secret_spans)
+            if in_secret:
+                continue
+        deduped.append(f)
+    return deduped
