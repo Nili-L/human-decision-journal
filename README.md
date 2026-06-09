@@ -32,13 +32,13 @@ If you do **not** already have a journal, this is the whole flow:
 
 ## Register the MCP server
 
-**Claude Desktop / Claude Code** (`claude_desktop_config.json` or `.mcp.json`) — `command` is `python`, `args` is `["-m", "server.main"]`, `cwd` is the absolute path to this repo:
+**Claude Desktop / Claude Code** (`claude_desktop_config.json` or `.mcp.json`) — point `command` at your venv's **python binary** and launch the module with `-m server.main`:
 
 ```json
 {
   "mcpServers": {
     "decision-journal": {
-      "command": "python",
+      "command": "/absolute/path/to/human-decision-journal/.venv/bin/python",
       "args": ["-m", "server.main"],
       "cwd": "/absolute/path/to/human-decision-journal"
     }
@@ -47,6 +47,8 @@ If you do **not** already have a journal, this is the whole flow:
 ```
 
 **Cursor / Zed / OpenCode:** add the same `command`/`args`/`cwd` under each tool's MCP config section.
+
+> **macOS gotcha — invoke `python`, not the console-script wrapper.** `pip install -e .` also generates a wrapper at `.venv/bin/human-decision-journal`. It works from a terminal, but GUI-launched clients (Claude Desktop, Cursor) spawn it in a context where the re-exec'd interpreter is denied its own `.venv/pyvenv.cfg` — the server dies instantly with `PermissionError: [Errno 1] Operation not permitted: .../pyvenv.cfg` and the client reports "Server disconnected." Pointing `command` straight at `.venv/bin/python` with `args: ["-m", "server.main"]` avoids it. (Terminal-based clients like Claude Code can use either form.)
 
 ## Optional: proactive journaling
 
