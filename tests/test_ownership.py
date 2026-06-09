@@ -1,0 +1,31 @@
+import subprocess
+from pathlib import Path
+from server.ownership import resolve_repo_path, is_collaboration
+
+def _git(path, *args):
+    subprocess.run(["git", *args], cwd=path, check=True, capture_output=True)
+
+def _make_repo(path, author_email, remote_url):
+    path.mkdir(parents=True)
+    _git(path, "init", "-q")
+    _git(path, "config", "user.email", author_email)
+    _git(path, "config", "user.name", "Tester")
+    _git(path, "remote", "add", "origin", remote_url)
+    (path / "f.txt").write_text("x")
+    _git(path, "add", "-A")
+    _git(path, "commit", "-qm", "c1")
+
+def test_resolve_repo_path(tmp_path):
+    (tmp_path / "roots" / "acme").mkdir(parents=True)
+    assert resolve_repo_path("acme", [tmp_path / "roots"]) == tmp_path / "roots" / "acme"
+    assert resolve_repo_path("missing", [tmp_path / "roots"]) is None
+
+def test_own_repo_is_not_collaboration(tmp_path):
+    repo = tmp_path / "mine"
+    _make_repo(repo, "jo@x.com", "git@github.com:Jo/mine.git")
+    assert is_collaboration(repo, ["jo@x.com", "Jo"]) is False
+
+def test_fork_of_others_is_collaboration(tmp_path):
+    repo = tmp_path / "theirs"
+    _make_repo(repo, "other@y.com", "git@github.com:SomeoneElse/theirs.git")
+    assert is_collaboration(repo, ["jo@x.com", "Jo"]) is True
