@@ -56,6 +56,16 @@ def build_server(config_path: Path = ROOT / "config.toml") -> FastMCP:
     def get_timeline() -> dict:
         return svc.get_timeline()
 
+    @mcp.tool(description=(
+        "Export a shareable Authorship Report from the journal — a work-scoped, read-only "
+        "evidentiary view of what the owner decided vs. what the agent did, for a manager or "
+        "client. Defaults to Work entries only (Personal is excluded). Optionally narrow by "
+        "since/until ('YYYY-MM-DD', inclusive) and repos[]. Never writes the journal or touches "
+        "git; re-runs the customer-data hard-block over the rendered report before returning."))
+    def export_authorship_report(category: str = "work", since: str | None = None,
+                                 until: str | None = None, repos: list[str] | None = None) -> dict:
+        return svc.export_authorship_report(category=category, since=since, until=until, repos=repos)
+
     @mcp.tool(description="Propose a new tag (axis='domain'|'activity'); owner confirms by approving the call.")
     def propose_tag(axis: str, name: str, gloss: str) -> dict:
         return svc.propose_tag(axis, name, gloss)

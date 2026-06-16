@@ -6,6 +6,7 @@ from server.config import Config
 from server.privacy import scan
 from server.vocab import load_vocab, add_local_tag, TAGGING_GUIDANCE
 from server import journal as J
+from server import report as R
 from server.timeline import build_timeline, firsts
 from server.ownership import resolve_repo_path, is_collaboration
 from server import gitops
@@ -121,6 +122,20 @@ class JournalService:
     def get_timeline(self) -> dict:
         jr = self._load_journal()
         return {"timeline": build_timeline(jr.entries)}
+
+    def export_authorship_report(self, *, category: str = "work", since: str | None = None,
+                                 until: str | None = None, repos: list[str] | None = None) -> dict:
+        jr = self._load_journal()
+        report, stats = R.build_report(jr, self.cfg.owner_name, category=category,
+                                       since=since, until=until, repos=repos)
+        # Egress privacy scan: entries are scanned at write time, but the report is the
+        # surface that leaves the building, so it is scanned again at the door.
+        findings = self._scan_all(report)
+        if findings:
+            spans = ", ".join(f"{f.kind}:{f.value!r}" for f in findings[:8])
+            return {"status": "blocked",
+                    "message": f"report blocked (customer data): {spans}. Sanitize the journal and retry."}
+        return {"status": "ok", "report": report, "stats": stats}
 
     def propose_tag(self, axis: str, name: str, gloss: str) -> dict:
         if axis not in ("domain", "activity"):
