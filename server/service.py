@@ -8,6 +8,7 @@ from server.vocab import load_vocab, add_local_tag, TAGGING_GUIDANCE
 from server import journal as J
 from server import report as R
 from server import coverage as CV
+from server import digest as DG
 from server.timeline import build_timeline, firsts
 from server.ownership import resolve_repo_path, is_collaboration
 from server import gitops
@@ -151,6 +152,28 @@ class JournalService:
                 return {"status": "blocked",
                         "message": f"coverage report blocked (customer data): {spans}."}
         return {"status": "ok", "report": report, "stats": stats}
+
+    def period_summary(self, *, period="month", basis="to-date", since=None, until=None,
+                       scope="all", detail="titles") -> dict:
+        import datetime
+        scope = "work" if scope.lower() == "work" else "all"
+        detail = "full" if detail == "full" else "titles"
+        s, u, label = DG.period_window(period, basis, since, until, datetime.date.today())
+        jr = self._load_journal()
+
+        def in_scope(e):
+            return scope == "all" or jr.repo_category.get(e.repo) == "Work"
+
+        scoped = [e for e in jr.entries if in_scope(e)]
+        selected = [e for e in scoped if s <= e.date <= u]
+        firsts_in_window = [f for f in firsts(scoped) if s <= f[0] <= u]
+        report, stats = DG.build_digest(self.cfg.owner_name, selected, firsts_in_window,
+                                        scope=scope, label=label, detail=detail)
+        findings = self._scan_all(report)
+        if findings:
+            spans = ", ".join(f"{f.kind}:{f.value!r}" for f in findings[:8])
+            return {"status": "blocked", "message": f"digest blocked (customer data): {spans}."}
+        return {"status": "ok", "digest": report, "stats": stats}
 
     def list_tags(self) -> dict:
         v = self._vocab()
