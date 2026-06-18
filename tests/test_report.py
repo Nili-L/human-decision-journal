@@ -72,3 +72,12 @@ def test_report_empty_journal(tmp_path):
     res = svc.export_authorship_report()
     assert res["status"] == "ok"
     assert res["stats"]["entries"] == 0
+
+
+from server.report import human_decision_bullets
+
+def test_human_decision_bullets_extracts():
+    raw = ("### 2026-06-01 — t\n\n**Session focus:** f\n\n"
+           "**Human-driven decisions:**\n- chose A\n- set bar B\n\n"
+           "**AI execution:**\n- did X\n\n**Tags:** domain: backend · activity: design\n")
+    assert human_decision_bullets(raw) == ["- chose A", "- set bar B"]
