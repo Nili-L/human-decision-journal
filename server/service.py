@@ -6,6 +6,7 @@ from server.config import Config
 from server.privacy import scan
 from server.vocab import load_vocab, add_local_tag, TAGGING_GUIDANCE
 from server import journal as J
+from server import coverage as CV
 from server.timeline import build_timeline, firsts
 from server.ownership import resolve_repo_path, is_collaboration
 from server import gitops
@@ -114,6 +115,42 @@ class JournalService:
         return {"Work": jr.repo_order.get("Work", []),
                 "Personal": jr.repo_order.get("Personal", [])}
 
+    def coverage_report(self, *, since: str | None = None, until: str | None = None,
+                        scope: str = "all", level: str = "summary") -> dict:
+        scope = "work" if scope.lower() == "work" else "all"
+        level = level if level in CV.LEVELS else "summary"
+        jr = self._load_journal()
+        logged: dict[str, set] = {}
+        for e in jr.entries:
+            logged.setdefault(e.repo, set()).add(e.date)
+        want_subjects = (level == "full")
+        repos: list[CV.RepoCoverage] = []
+        for name, path in gitops.list_git_repos(self.cfg.repo_roots):
+            active = gitops.owner_commit_dates(path, self.cfg.owner_identities,
+                                               since=since, until=until,
+                                               with_subjects=want_subjects)
+            active_dates = set(active.keys()) if want_subjects else active
+            if not active_dates:
+                continue
+            category = jr.repo_category.get(name)
+            if scope == "work" and category != "Work":
+                continue
+            subjects = {}
+            if want_subjects:
+                subjects = {d: [redact_subject(s, self.cfg) for s in subs]
+                            for d, subs in active.items()}
+            repos.append(CV.RepoCoverage(repo=name, category=category,
+                                         active=active_dates, logged=logged.get(name, set()),
+                                         subjects=subjects))
+        report, stats = CV.build_report(self.cfg.owner_name, repos, scope=scope, level=level)
+        if level != "full":
+            findings = self._scan_all(report)
+            if findings:
+                spans = ", ".join(f"{f.kind}:{f.value!r}" for f in findings[:8])
+                return {"status": "blocked",
+                        "message": f"coverage report blocked (customer data): {spans}."}
+        return {"status": "ok", "report": report, "stats": stats}
+
     def list_tags(self) -> dict:
         v = self._vocab()
         return {"domains": v.domains, "activities": v.activities, "guidance": TAGGING_GUIDANCE}
@@ -156,3 +193,8 @@ def _render_full_entry(e, session_focus, human_decisions, ai_execution, notable_
     lines.append(f"**Source:** {source}")
     lines += ["", f"**Tags:** {tags}"]
     return "\n".join(lines).rstrip() + "\n"
+
+
+def redact_subject(subject: str, cfg) -> str:
+    from server.privacy import redact
+    return redact(subject, cfg.owner_identities, cfg.dev_domains)
