@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,13 @@ class Config:
     journal_path: Path
     repo_roots: list[Path]
     dev_domains: list[str]
+    categorization_enabled: bool = False
+    state_dir: Path | None = None
+
+def _default_state_dir() -> Path:
+    base = os.environ.get("XDG_STATE_HOME")
+    root = Path(base).expanduser() if base else Path.home() / ".local" / "state"
+    return root / "human-decision-journal"
 
 def load_config(path: Path) -> Config:
     path = Path(path)
@@ -22,10 +30,16 @@ def load_config(path: Path) -> Config:
     jp = Path(data["journal_path"]).expanduser()
     if not jp.is_absolute():
         jp = base / jp
+    cat = data.get("categorization", {})
+    cat_enabled = bool(cat.get("enabled", False))
+    sd = cat.get("state_dir")
+    state_dir = Path(sd).expanduser() if sd else _default_state_dir()
     return Config(
         owner_name=data["owner_name"],
         owner_identities=list(data["owner_identities"]),
         journal_path=jp,
         repo_roots=[Path(p).expanduser() for p in data["repo_roots"]],
         dev_domains=list(data["dev_domains"]),
+        categorization_enabled=cat_enabled,
+        state_dir=state_dir,
     )
