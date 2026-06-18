@@ -81,6 +81,7 @@ Maintain the owner's Decisions Journal via the `decision-journal` MCP. On commit
 | `get_timeline` | Firsts ledger + "what I do most" rollup. |
 | `export_authorship_report` | Render a shareable, work-scoped report of your decisions vs. the agent's (read-only). |
 | `coverage_report` | Reconcile git commits vs logged entries by active day; private by default. |
+| `period_summary` | Digest a week/month/quarter of entries; counts, top tags, firsts. |
 | `propose_tag` | Add a new tag (owner confirms). |
 | `preflight` | Environment/health check. |
 | `guess_category` | (add-on) Guess Work/Personal for a new repo; you confirm. |
@@ -129,6 +130,16 @@ journal**:
 
 So you get both: a private record that stays honest, and an evidentiary report you can
 hand to your bosses. Design notes: [`docs/AUTHORSHIP-REPORT.md`](docs/AUTHORSHIP-REPORT.md).
+
+## Period digest
+
+`period_summary` rolls a time window of entries into a digest — decisions, projects, top
+domains/activities/tools, and new "firsts" — for a standup, a manager update, or
+self-review. Pick the window with `period` (`week`/`month`/`quarter`) × `basis`
+(`rolling` = last 7/30/90 days, `calendar` = exact 1 week/month/quarter, `to-date`,
+`previous`), or pass `since`/`until`. Weeks start Sunday. `scope="work"` limits it for
+sharing; `detail="full"` includes each entry's Human-driven decision bullets. Read-only.
+See `docs/PERIOD-SUMMARY.md`.
 
 ## Privacy
 
