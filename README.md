@@ -79,8 +79,19 @@ Maintain the owner's Decisions Journal via the `decision-journal` MCP. On commit
 | `list_sections` | Existing repos grouped by Work/Personal. |
 | `list_tags` | The domain + activity vocabularies with glosses. |
 | `get_timeline` | Firsts ledger + "what I do most" rollup. |
+| `coverage_report` | Reconcile git commits vs logged entries by active day; private by default. |
 | `propose_tag` | Add a new tag (owner confirms). |
 | `preflight` | Environment/health check. |
+
+## Coverage report
+
+`coverage_report` answers "what did my time actually go into?" by reconciling your own
+git commits against logged entries, **by active day** (a day you committed but logged
+nothing is a gap). It is read-only and **private by default**, with a disclosure ladder:
+`headline` (one number) → `summary` (per-repo %) → `detailed` (+ gap dates) → `full`
+(+ commit subjects, redacted for customer data). `scope="work"` limits it to Work repos
+for sharing; `scope="all"` (default) includes everything and surfaces never-logged repos.
+See `docs/COVERAGE-REPORT.md`.
 
 ## Privacy
 
