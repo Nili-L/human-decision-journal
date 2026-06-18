@@ -56,6 +56,16 @@ def build_server(config_path: Path = ROOT / "config.toml") -> FastMCP:
     def get_timeline() -> dict:
         return svc.get_timeline()
 
+    @mcp.tool(description=(
+        "Read-only coverage report: reconcile your own git commits against logged journal "
+        "entries, by active day. Private by default. level='headline'|'summary'|'detailed'|"
+        "'full' (increasing disclosure); scope='all' (incl. personal) or 'work'. Optional "
+        "since/until ('YYYY-MM-DD', inclusive). Commit subjects appear only at 'full' and are "
+        "redacted for customer data."))
+    def coverage_report(since: str | None = None, until: str | None = None,
+                        scope: str = "all", level: str = "summary") -> dict:
+        return svc.coverage_report(since=since, until=until, scope=scope, level=level)
+
     @mcp.tool(description="Propose a new tag (axis='domain'|'activity'); owner confirms by approving the call.")
     def propose_tag(axis: str, name: str, gloss: str) -> dict:
         return svc.propose_tag(axis, name, gloss)
