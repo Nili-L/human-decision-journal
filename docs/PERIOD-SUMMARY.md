@@ -23,7 +23,11 @@ Two small knobs cover every useful window; `since`/`until` override both.
 
 - **`period`** — granularity: `week` | `month` | `quarter`.
 - **`basis`** — which window of that granularity, relative to *today*:
-  - `rolling` — the last 7 / 30 / 90 days (ending today).
+  - `rolling` — a fixed day-count ending today: **7 / 30 / 90 days** for week / month / quarter.
+  - `calendar` — an **exact calendar length** ending today: 7 days / 1 calendar month /
+    3 calendar months. The inclusive window runs from the day after one-unit-ago through
+    today (e.g. month, today=2026-06-18 → `2026-05-19 → 2026-06-18`). Differs from `rolling`
+    only for month/quarter, whose real length varies.
   - `to-date` — the current calendar week / month / quarter, from its start through today.
   - `previous` — the last *complete* calendar week / month / quarter (e.g. "write up the
     month that just ended").
@@ -31,8 +35,8 @@ Two small knobs cover every useful window; `since`/`until` override both.
   window and `period`/`basis` are ignored; the label becomes the literal range.
 
 "Today" comes from the server (`datetime.date.today()`, already used in `log_decision`).
-Calendar week starts Monday. Each window produces a human label for the digest heading
-(e.g. `June 2026`, `week of 2026-06-09`, `2026-06-12 → 2026-06-18`).
+**Calendar weeks start Sunday** (Israeli Sun–Thu work week). Each window produces a human
+label for the digest heading (e.g. `June 2026`, `week of 2026-06-14`, `2026-05-19 → 2026-06-18`).
 
 ## Content
 
@@ -70,9 +74,10 @@ Mirrors the `coverage.py` / `report.py` layering.
 - **`server/service.py`** — `period_summary(...)`: compute window → select entries by
   date + scope → compute in-window firsts via `timeline.firsts()` → render → egress scan.
 - **`server/main.py`** — register the `period_summary` MCP tool.
-- **`tests/test_digest.py`** — `period_window` for each `period`×`basis` (9 combos) +
-  `since`/`until` override; entry selection by date and scope; top-N tag rollup; in-window
-  firsts; both `detail` levels; empty-window digest; egress scan blocks planted data.
+- **`tests/test_digest.py`** — `period_window` for each `period`×`basis` (12 combos: 3
+  periods × 4 bases, with Sunday week start) + `since`/`until` override; entry selection
+  by date and scope; top-N tag rollup; in-window firsts; both `detail` levels;
+  empty-window digest; egress scan blocks planted data.
 
 ## Out of scope (YAGNI / deferred)
 
