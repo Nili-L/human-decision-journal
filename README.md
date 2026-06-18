@@ -79,6 +79,7 @@ Maintain the owner's Decisions Journal via the `decision-journal` MCP. On commit
 | `list_sections` | Existing repos grouped by Work/Personal. |
 | `list_tags` | The domain + activity vocabularies with glosses. |
 | `get_timeline` | Firsts ledger + "what I do most" rollup. |
+| `export_authorship_report` | Render a shareable, work-scoped report of your decisions vs. the agent's (read-only). |
 | `coverage_report` | Reconcile git commits vs logged entries by active day; private by default. |
 | `propose_tag` | Add a new tag (owner confirms). |
 | `preflight` | Environment/health check. |
@@ -103,6 +104,31 @@ nothing is a gap). It is read-only and **private by default**, with a disclosure
 (+ commit subjects, redacted for customer data). `scope="work"` limits it to Work repos
 for sharing; `scope="all"` (default) includes everything and surfaces never-logged repos.
 See `docs/COVERAGE-REPORT.md`.
+
+## Showing your work to others (Authorship Report)
+
+The journal is a **private mirror** — your complete, candid record across Work *and*
+Personal projects, kept for your own growth, never written for an audience. That privacy
+is what keeps it honest.
+
+But the same entries also answer the question a manager or client asks about AI-assisted
+work: **on this project, what did *you* decide, and what did the agent do?** Because every
+entry already records your decisions and the AI's execution *separately and in your own
+words*, that evidence already exists.
+
+`export_authorship_report` turns it into a shareable artifact **without touching the
+journal**:
+
+- **Work-only by default** — your personal projects are never included.
+- **Read-only** — it never writes the journal and never touches git; it's a *derived
+  view*, generated on demand. Generating a report can't make the journal performative.
+- **Scopable** — narrow by `since`/`until` (`YYYY-MM-DD`, inclusive) or to specific
+  `repos`, e.g. a single client.
+- **Privacy at the door** — the customer-data hard-block runs again over the rendered
+  report before it's returned.
+
+So you get both: a private record that stays honest, and an evidentiary report you can
+hand to your bosses. Design notes: [`docs/AUTHORSHIP-REPORT.md`](docs/AUTHORSHIP-REPORT.md).
 
 ## Privacy
 
