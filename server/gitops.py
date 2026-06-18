@@ -23,6 +23,18 @@ def remotes(path: Path) -> dict[str, str]:
             result[name] = url
     return result
 
+def author_email_domains(path: Path) -> dict[str, int]:
+    """Map of lowercased author-email domain -> commit count across history."""
+    out = _run(Path(path), "log", "--pretty=%ae").stdout
+    counts: dict[str, int] = {}
+    for line in out.splitlines():
+        line = line.strip()
+        if "@" in line:
+            dom = line.rsplit("@", 1)[1].lower()
+            if dom:
+                counts[dom] = counts.get(dom, 0) + 1
+    return counts
+
 def sync(journal_path: Path, message: str) -> str:
     if not git_available():
         return "git unavailable — local journal saved; not pushed"

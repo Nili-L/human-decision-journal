@@ -1,8 +1,19 @@
 import subprocess
 from pathlib import Path
-from server.gitops import git_available, is_git_repo, remotes, sync
+from server.gitops import git_available, is_git_repo, remotes, sync, author_email_domains
 
 def _git(path, *a): subprocess.run(["git", *a], cwd=path, check=True, capture_output=True)
+
+def test_author_email_domains(tmp_path):
+    repo = tmp_path / "r"
+    repo.mkdir(parents=True)
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.email", "jo@Acme.com")
+    _git(repo, "config", "user.name", "T")
+    (repo / "f").write_text("x")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "c")
+    assert author_email_domains(repo) == {"acme.com": 1}
 
 def test_git_available():
     assert git_available() in (True, False)
