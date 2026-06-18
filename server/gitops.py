@@ -61,6 +61,18 @@ def owner_commit_dates(path, identities, since=None, until=None, with_subjects=F
             dates.add(date)
     return dates_with if with_subjects else dates
 
+def author_email_domains(path: Path) -> dict[str, int]:
+    """Map of lowercased author-email domain -> commit count across history."""
+    out = _run(Path(path), "log", "--pretty=%ae").stdout
+    counts: dict[str, int] = {}
+    for line in out.splitlines():
+        line = line.strip()
+        if "@" in line:
+            dom = line.rsplit("@", 1)[1].lower()
+            if dom:
+                counts[dom] = counts.get(dom, 0) + 1
+    return counts
+
 def sync(journal_path: Path, message: str) -> str:
     if not git_available():
         return "git unavailable — local journal saved; not pushed"

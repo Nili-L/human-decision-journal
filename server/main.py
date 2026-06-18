@@ -18,7 +18,17 @@ def build_server(config_path: Path = ROOT / "config.toml") -> FastMCP:
     svc = JournalService(cfg, seed_vocab=ROOT / "work-vocab.toml",
                          local_vocab=ROOT / "work-vocab.local.toml",
                          rules_path=ROOT / "RULES.md")
-    mcp = FastMCP("decision-journal", instructions=_instructions(ROOT / "RULES.md", cfg))
+    cat_addon = None
+    if cfg.categorization_enabled:
+        from server.addons import categorization as cat_addon
+
+    instructions = _instructions(ROOT / "RULES.md", cfg)
+    if cat_addon:
+        snippet = cat_addon.rules_snippet()
+        if snippet:
+            instructions = instructions + "\n\n" + snippet
+
+    mcp = FastMCP("decision-journal", instructions=instructions)
 
     @mcp.tool(description=(
         "Log one substantive decision to the journal (commit-trigger action; local write only). "
@@ -81,6 +91,9 @@ def build_server(config_path: Path = ROOT / "config.toml") -> FastMCP:
     @mcp.prompt()
     def journaling_rules() -> str:
         return (ROOT / "RULES.md").read_text()
+
+    if cat_addon:
+        cat_addon.register(mcp, svc, cfg)
 
     return mcp
 

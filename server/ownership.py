@@ -19,19 +19,26 @@ def _git_out(path: Path, *args) -> str:
         return ""
 
 
-def is_collaboration(repo_path: Path, owner_identities: list[str]) -> bool:
-    """True when the repo's canonical ownership is NOT the owner's:
-    an origin/upstream URL owner that isn't the owner, or authorship majority not-owner."""
-    owners = {o.lower() for o in owner_identities}
+def remote_owner(repo_path: Path) -> str | None:
+    """Owner/org segment of the repo's first available remote URL, lowercased."""
     for remote in ("upstream", "origin"):
         url = _git_out(repo_path, "remote", "get-url", remote)
         if not url:
             continue
         tail = url.split(":")[-1] if ":" in url and "//" not in url else url.split("//")[-1]
         parts = [p for p in tail.replace(":", "/").split("/") if p]
-        owner_seg = parts[-2].lower() if len(parts) >= 2 else ""
-        if owner_seg:
-            return owner_seg not in owners
+        if len(parts) >= 2:
+            return parts[-2].lower()
+    return None
+
+
+def is_collaboration(repo_path: Path, owner_identities: list[str]) -> bool:
+    """True when the repo's canonical ownership is NOT the owner's:
+    an origin/upstream URL owner that isn't the owner, or authorship majority not-owner."""
+    owners = {o.lower() for o in owner_identities}
+    org = remote_owner(repo_path)
+    if org is not None:
+        return org not in owners
     log = _git_out(repo_path, "shortlog", "-sne", "HEAD")
     if not log:
         return False
