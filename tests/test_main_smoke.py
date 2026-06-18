@@ -47,3 +47,14 @@ def test_categorization_tool_present_when_enabled(tmp_path):
                                f'state_dir="{tmp_path/"state"}"\n')
     mcp = build_server(config_path=cfg)
     assert "guess_category" in _tool_names(mcp)
+
+
+def test_period_summary_tool_registered(tmp_path):
+    cfg = tmp_path / "config.toml"
+    cfg.write_text(
+        'owner_name="Jo"\nowner_identities=["jo@x.com"]\n'
+        f'journal_path="{tmp_path/"DECISIONS_JOURNAL.md"}"\n'
+        'repo_roots=[]\ndev_domains=["github.com"]\n'
+    )
+    mcp = build_server(config_path=cfg)
+    assert "period_summary" in _tool_names(mcp)

@@ -86,6 +86,18 @@ def build_server(config_path: Path = ROOT / "config.toml") -> FastMCP:
                         scope: str = "all", level: str = "summary") -> dict:
         return svc.coverage_report(since=since, until=until, scope=scope, level=level)
 
+    @mcp.tool(description=(
+        "Read-only period digest: roll a time window of journal entries into a summary "
+        "(decisions, projects, top tags, new 'firsts'). period='week'|'month'|'quarter'; "
+        "basis='rolling'(fixed 7/30/90d)|'calendar'(exact 1wk/1mo/3mo)|'to-date'|'previous'; "
+        "since/until ('YYYY-MM-DD') override. scope='all'|'work'. detail='titles'|'full' "
+        "(full includes each entry's Human-driven decision bullets)."))
+    def period_summary(period: str = "month", basis: str = "to-date",
+                       since: str | None = None, until: str | None = None,
+                       scope: str = "all", detail: str = "titles") -> dict:
+        return svc.period_summary(period=period, basis=basis, since=since, until=until,
+                                  scope=scope, detail=detail)
+
     @mcp.tool(description="Propose a new tag (axis='domain'|'activity'); owner confirms by approving the call.")
     def propose_tag(axis: str, name: str, gloss: str) -> dict:
         return svc.propose_tag(axis, name, gloss)
