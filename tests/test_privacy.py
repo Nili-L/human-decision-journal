@@ -96,3 +96,16 @@ def test_real_emails_and_domains_still_flagged():
     assert "email" in {f.kind for f in scan("mail alice@acme-corp.com", OWNER, dev)}
     assert "email" in {f.kind for f in scan("colleague bob@ironscales.com", OWNER, dev)}  # ironscales.com not a dev domain
     assert "domain" in {f.kind for f in scan("their site acme-corp.com", OWNER, dev)}
+
+
+from server.privacy import redact
+
+def test_redact_masks_findings():
+    text = "email alice@acme.com and ZD-9981"
+    out = redact(text, ["jo@x.com"], ["github.com"])
+    assert "alice@acme.com" not in out
+    assert "ZD-9981" not in out
+    assert "[redacted]" in out
+
+def test_redact_keeps_clean_text():
+    assert redact("just plain words", ["jo@x.com"], ["github.com"]) == "just plain words"
