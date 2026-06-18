@@ -1,5 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from pathlib import Path
+
+from server import gitops
+from server.ownership import remote_owner, is_collaboration
 
 
 @dataclass(frozen=True)
@@ -15,6 +19,17 @@ class Guess:
     guess: str | None        # "Work" | "Personal" | None
     confidence: str          # "high" | "medium" | "low"
     reasons: list[str]
+
+
+def signals_for(path, owner_identities: list[str]) -> Signals:
+    p = Path(path)
+    domains = tuple(sorted(gitops.author_email_domains(p).keys()))
+    return Signals(
+        remote_org=remote_owner(p),
+        email_domains=domains,
+        path_prefix=str(p.parent),
+        is_collaboration=is_collaboration(p, owner_identities),
+    )
 
 
 def guess(target: Signals, labeled: list[tuple[Signals, str]]) -> Guess:
