@@ -32,6 +32,11 @@ def _write_cfg(tmp_path, extra=""):
     return cfg
 
 
+def test_coverage_tool_registered(tmp_path):
+    mcp = build_server(config_path=_write_cfg(tmp_path))
+    assert "coverage_report" in _tool_names(mcp)
+
+
 def test_categorization_tool_absent_by_default(tmp_path):
     mcp = build_server(config_path=_write_cfg(tmp_path))
     assert "guess_category" not in _tool_names(mcp)
