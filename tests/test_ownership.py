@@ -1,6 +1,19 @@
 import subprocess
 from pathlib import Path
-from server.ownership import resolve_repo_path, is_collaboration
+from server.ownership import resolve_repo_path, is_collaboration, remote_owner
+
+
+def test_remote_owner_extracts_org(tmp_path):
+    repo = tmp_path / "r"
+    _make_repo(repo, "jo@x.com", "git@github.com:AcmeCorp/r.git")
+    assert remote_owner(repo) == "acmecorp"
+
+
+def test_remote_owner_none_without_remote(tmp_path):
+    repo = tmp_path / "noremote"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    assert remote_owner(repo) is None
 
 def _git(path, *args):
     subprocess.run(["git", *args], cwd=path, check=True, capture_output=True)

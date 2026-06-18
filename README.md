@@ -81,6 +81,17 @@ Maintain the owner's Decisions Journal via the `decision-journal` MCP. On commit
 | `get_timeline` | Firsts ledger + "what I do most" rollup. |
 | `propose_tag` | Add a new tag (owner confirms). |
 | `preflight` | Environment/health check. |
+| `guess_category` | (add-on) Guess Work/Personal for a new repo; you confirm. |
+
+## Optional add-ons
+
+Add-ons are opt-in modules enabled in `config.toml`; when off, they add nothing.
+
+- **Categorization** (`[categorization] enabled = true`) — on a new repo, instead of
+  asking blind, the agent guesses Work or Personal from signals learned off your already-
+  categorized repos and asks you to confirm. The derived mapping contains client/employer
+  identifiers, so it is cached in `state_dir` **outside any repo** and never synced. See
+  `docs/CATEGORIZATION.md`.
 
 ## Privacy
 
