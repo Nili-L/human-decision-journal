@@ -8,3 +8,12 @@ journal_path = "DECISIONS_JOURNAL.md"
 repo_roots = ["~/code"]
 # Code-hosting/dev domains the privacy guard will NOT block (you legitimately cite these).
 dev_domains = ["github.com", "bitbucket.org", "gitlab.com", "localhost"]
+
+# --- Optional add-on: Work/Personal categorization -------------------------------
+# Guess whether a NEW repo is Work or Personal from signals learned off your
+# already-categorized repos (git-host org, author email domain, folder). You ALWAYS
+# confirm; nothing is auto-filed. The PII-bearing mapping is cached in state_dir —
+# OUTSIDE any repo — and is never synced. Off by default.
+# [categorization]
+# enabled = true
+# state_dir = "~/.local/state/human-decision-journal"

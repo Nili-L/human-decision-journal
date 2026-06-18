@@ -177,3 +177,11 @@ def scan(text: str, owner_identities: list[str], dev_domains: list[str]) -> list
                 continue
         deduped.append(f)
     return deduped
+
+def redact(text: str, owner_identities: list[str], dev_domains: list[str]) -> str:
+    """Replace every detected customer-data span with [redacted]. Reuses scan();
+    splices from the end so earlier offsets stay valid."""
+    findings = scan(text, owner_identities, dev_domains)
+    for f in sorted(findings, key=lambda f: f.start, reverse=True):
+        text = text[:f.start] + "[redacted]" + text[f.end:]
+    return text
