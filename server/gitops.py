@@ -23,6 +23,44 @@ def remotes(path: Path) -> dict[str, str]:
             result[name] = url
     return result
 
+def list_git_repos(roots) -> list[tuple[str, Path]]:
+    """Immediate subdirectories of each root that are git repos: (name, path)."""
+    found: list[tuple[str, Path]] = []
+    for root in roots:
+        root = Path(root).expanduser()
+        if not root.is_dir():
+            continue
+        for child in sorted(root.iterdir()):
+            if child.is_dir() and is_git_repo(child):
+                found.append((child.name, child))
+    return found
+
+def owner_commit_dates(path, identities, since=None, until=None, with_subjects=False):
+    """Author-dates (YYYY-MM-DD) of commits authored by the owner, optionally within
+    [since, until] inclusive. with_subjects=True -> {date: [subject, ...]} else a set."""
+    owners = {o.lower() for o in identities}
+    out = _run(Path(path), "log", "--date=short", "--pretty=%ad%x09%ae%x09%an%x09%s").stdout
+    dates_with: dict[str, list[str]] = {}
+    dates: set[str] = set()
+    for line in out.splitlines():
+        parts = line.split("\t", 3)
+        if len(parts) < 3:
+            continue
+        date, email, name = parts[0], parts[1], parts[2]
+        subject = parts[3] if len(parts) > 3 else ""
+        if since and date < since:
+            continue
+        if until and date > until:
+            continue
+        hay = (email + " " + name).lower()
+        if not any(o in hay for o in owners):
+            continue
+        if with_subjects:
+            dates_with.setdefault(date, []).append(subject)
+        else:
+            dates.add(date)
+    return dates_with if with_subjects else dates
+
 def sync(journal_path: Path, message: str) -> str:
     if not git_available():
         return "git unavailable — local journal saved; not pushed"
