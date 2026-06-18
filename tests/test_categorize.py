@@ -69,3 +69,58 @@ def test_signals_for_reads_repo(tmp_path):
     assert s.email_domains == ("acme.com",)
     assert s.path_prefix == str(repo.parent)
     assert s.is_collaboration is True   # org 'acme' is not in owner identities
+
+
+from pathlib import Path as _P
+from server.config import Config
+from server.service import JournalService
+from server.addons import categorization
+
+_ROOT = _P(__file__).resolve().parents[1]
+_SEED = _ROOT / "work-vocab.toml"
+_LOG = dict(session_focus="f", source="s", domains=["backend"], activities=["design"],
+            human_decisions=["d"], ai_execution=["a"])
+
+
+def _svc(tmp_path, state_dir):
+    roots = tmp_path / "roots"
+    cfg = Config(owner_name="Jo", owner_identities=["jo@x.com", "Jo"],
+                 journal_path=tmp_path / "J.md", repo_roots=[roots],
+                 dev_domains=["github.com"], categorization_enabled=True,
+                 state_dir=state_dir)
+    return JournalService(cfg, seed_vocab=_SEED, local_vocab=tmp_path / "v.toml",
+                          rules_path=_ROOT / "RULES.md"), roots
+
+
+def test_categorize_repo_guesses_work(tmp_path):
+    state = tmp_path / "state"
+    svc, roots = _svc(tmp_path, state)
+    for name in ("w1", "w2"):
+        _make_repo(roots / name, "jo@acme.com", f"git@github.com:acme/{name}.git")
+        svc.log_decision(repo=name, category="work", title="t", **_LOG)
+    _make_repo(roots / "target", "jo@acme.com", "git@github.com:acme/target.git")
+
+    before = (tmp_path / "J.md").read_text()
+    res = categorization.categorize_repo(svc, "target")
+    after = (tmp_path / "J.md").read_text()
+
+    assert res["status"] == "ok"
+    assert res["guess"] == "Work"
+    assert res["reasons"]
+    # read-only: the guess must not touch the journal, and reasons must not leak into it
+    assert before == after
+    for reason in res["reasons"]:
+        assert reason not in after
+    # PII-bearing cache written OUTSIDE any repo, under state_dir
+    assert (state / "categories.local.json").exists()
+
+
+def test_categorize_repo_unknown_path(tmp_path):
+    svc, _ = _svc(tmp_path, tmp_path / "state")
+    res = categorization.categorize_repo(svc, "does-not-exist")
+    assert res["status"] == "no_path"
+    assert res["guess"] is None
+
+
+def test_rules_snippet_mentions_tool():
+    assert "guess_category" in categorization.rules_snippet()
