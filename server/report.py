@@ -52,6 +52,11 @@ def _bullets(lines: list[str]) -> list[str]:
     return items
 
 
+def human_decision_bullets(raw: str) -> list[str]:
+    """The owner's Human-driven decision bullets (each '- '-prefixed) from a rendered entry."""
+    return _bullets(_sections(raw).get("**Human-driven decisions:**", []))
+
+
 def select(journal: Journal, *, category: str = "Work",
            since: str | None = None, until: str | None = None,
            repos: list[str] | None = None) -> list[Entry]:
