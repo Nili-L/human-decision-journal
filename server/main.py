@@ -98,6 +98,18 @@ def build_server(config_path: Path = ROOT / "config.toml") -> FastMCP:
         return svc.period_summary(period=period, basis=basis, since=since, until=until,
                                   scope=scope, detail=detail)
 
+    @mcp.tool(description=(
+        "Read-only division-of-labor metric: 'direction share' = the owner's decision "
+        "bullets ÷ all bullets, by bullets and words, over a window. A descriptive proxy "
+        "(not effort/value). period/basis/since/until window like period_summary; "
+        "scope='all'|'work'; detail='summary'|'entries' (entries adds a per-entry split). "
+        "Shows overall, per-project, and a month-by-month trend."))
+    def division_of_labor(period: str = "month", basis: str = "to-date",
+                          since: str | None = None, until: str | None = None,
+                          scope: str = "all", detail: str = "summary") -> dict:
+        return svc.division_of_labor(period=period, basis=basis, since=since, until=until,
+                                     scope=scope, detail=detail)
+
     @mcp.tool(description="Propose a new tag (axis='domain'|'activity'); owner confirms by approving the call.")
     def propose_tag(axis: str, name: str, gloss: str) -> dict:
         return svc.propose_tag(axis, name, gloss)
