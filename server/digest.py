@@ -4,6 +4,7 @@ from collections import Counter
 from datetime import date, timedelta
 
 from server.report import human_decision_bullets
+from server.labor import aggregate as _labor_aggregate
 
 PERIODS = ("week", "month", "quarter")
 BASES = ("rolling", "calendar", "to-date", "previous")
@@ -94,6 +95,11 @@ def build_digest(owner, entries, firsts_in_window, *, scope="all",
         lines.append(f"- Activities: {top(activities)}")
     if tools:
         lines.append(f"- Tools: {top(tools)}")
+    _la = _labor_aggregate(entries)
+    if _la["share_bullets"] is not None:
+        _tb = _la["human_bullets"] + _la["ai_bullets"]
+        lines.append(f"- Direction share: {_la['share_bullets']}% by bullets "
+                     f"({_la['human_bullets']}/{_tb}) · {_la['share_words']}% by words")
     if firsts_in_window:
         fl = ", ".join(sorted(f"{axis}: {value}" for (_d, axis, value, _r) in firsts_in_window))
         lines.append(f"- New firsts: {fl}")

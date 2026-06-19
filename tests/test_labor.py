@@ -63,3 +63,19 @@ def test_build_labor_report_empty():
     md, stats = build_labor_report("Jo", [], scope="all", label="L", detail="summary")
     assert "_No entries in this window._" in md
     assert stats["entries"] == 0
+
+
+from server.digest import build_digest
+
+
+def test_digest_shows_direction_share_when_bullets():
+    entries = [_entry(repo="portal", human=["a", "b"], ai=["c"])]
+    md, _ = build_digest("Jo", entries, [], scope="all", label="L", detail="titles")
+    assert "Direction share:" in md and "by bullets" in md
+
+
+def test_digest_omits_direction_share_without_bullets():
+    bare = Entry(date="2026-06-10", title="t", repo="portal", category="Work",
+                 domains=["backend"], activities=["design"], tools=[], raw="")
+    md, _ = build_digest("Jo", [bare], [], scope="all", label="L", detail="titles")
+    assert "Direction share:" not in md
