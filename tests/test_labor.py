@@ -79,3 +79,53 @@ def test_digest_omits_direction_share_without_bullets():
                  domains=["backend"], activities=["design"], tools=[], raw="")
     md, _ = build_digest("Jo", [bare], [], scope="all", label="L", detail="titles")
     assert "Direction share:" not in md
+
+
+from pathlib import Path
+from server.config import Config
+from server.service import JournalService
+
+_ROOT = Path(__file__).resolve().parents[1]
+_SEED = _ROOT / "work-vocab.toml"
+_LOG = dict(session_focus="f", source="s", domains=["backend"], activities=["design"],
+            human_decisions=["picked A", "set bar"], ai_execution=["did X"])
+
+
+def _svc(tmp_path):
+    cfg = Config(owner_name="Jo", owner_identities=["jo@x.com", "Jo"],
+                 journal_path=tmp_path / "J.md", repo_roots=[], dev_domains=["github.com"])
+    return JournalService(cfg, seed_vocab=_SEED, local_vocab=tmp_path / "v.toml",
+                          rules_path=_ROOT / "RULES.md")
+
+
+def test_division_of_labor_reports_share(tmp_path):
+    svc = _svc(tmp_path)
+    svc.log_decision(repo="portal", category="work", title="t", **_LOG)
+    res = svc.division_of_labor(period="month", basis="to-date")
+    assert res["status"] == "ok"
+    assert "Direction share:" in res["report"] and "## portal" in res["report"]
+    assert res["stats"]["share_bullets"] == 67
+
+
+def test_division_of_labor_scope_work(tmp_path):
+    svc = _svc(tmp_path)
+    svc.log_decision(repo="workrepo", category="work", title="t", **_LOG)
+    svc.log_decision(repo="diary", category="personal", title="t", **_LOG)
+    work = svc.division_of_labor(scope="work")["report"]
+    assert "workrepo" in work and "diary" not in work
+
+
+def test_division_of_labor_blocks_customer_data(tmp_path):
+    svc = _svc(tmp_path)
+    import server.journal as J
+    import datetime
+    jr = J.parse(J.new_journal_text())
+    jr.repo_category["portal"] = "Work"
+    jr.repo_order.setdefault("Work", []).append("portal")
+    jr.entries.append(J.Entry(date=datetime.date.today().isoformat(), title="ping alice@acme.com",
+                              repo="portal", category="Work", domains=["backend"],
+                              activities=["design"], tools=[]))
+    J.write_atomic(svc.cfg.journal_path, J.render(jr, svc._vocab()))
+    # detail="entries" renders titles, where the planted email lives, so the egress scan sees it.
+    res = svc.division_of_labor(scope="all", detail="entries")
+    assert res["status"] == "blocked" and "alice@acme.com" in res["message"]
