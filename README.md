@@ -82,6 +82,7 @@ Maintain the owner's Decisions Journal via the `decision-journal` MCP. On commit
 | `export_authorship_report` | Render a shareable, work-scoped report of your decisions vs. the agent's (read-only). |
 | `coverage_report` | Reconcile git commits vs logged entries by active day; private by default. |
 | `period_summary` | Digest a week/month/quarter of entries; counts, top tags, firsts. |
+| `division_of_labor` | "Direction share" (your decisions ÷ all bullets), per-project + trend. |
 | `propose_tag` | Add a new tag (owner confirms). |
 | `preflight` | Environment/health check. |
 | `guess_category` | (add-on) Guess Work/Personal for a new repo; you confirm. |
@@ -140,6 +141,17 @@ self-review. Pick the window with `period` (`week`/`month`/`quarter`) × `basis`
 `previous`), or pass `since`/`until`. Weeks start Sunday. `scope="work"` limits it for
 sharing; `detail="full"` includes each entry's Human-driven decision bullets. Read-only.
 See `docs/PERIOD-SUMMARY.md`.
+
+## Division of labor
+
+`division_of_labor` reports **direction share** — the owner's Human-driven-decision
+bullets ÷ all bullets — by bullets and words, with a per-project breakdown and a
+month-by-month trend. It is a **descriptive proxy** for how much of the logged work was
+the owner directing vs. the agent executing, *not* a measure of effort, value, or "who did
+more"; showcasing belongs in the (separate) brags log. Window via `period`/`basis`/
+`since`/`until` (like `period_summary`); `scope="work"` for sharing; `detail="entries"`
+lists each entry's split. The period digest also shows a one-line direction share.
+Read-only. See `docs/DIVISION-OF-LABOR.md`.
 
 ## Privacy
 
