@@ -58,3 +58,14 @@ def test_period_summary_tool_registered(tmp_path):
     )
     mcp = build_server(config_path=cfg)
     assert "period_summary" in _tool_names(mcp)
+
+
+def test_division_of_labor_tool_registered(tmp_path):
+    cfg = tmp_path / "config.toml"
+    cfg.write_text(
+        'owner_name="Jo"\nowner_identities=["jo@x.com"]\n'
+        f'journal_path="{tmp_path/"DECISIONS_JOURNAL.md"}"\n'
+        'repo_roots=[]\ndev_domains=["github.com"]\n'
+    )
+    mcp = build_server(config_path=cfg)
+    assert "division_of_labor" in _tool_names(mcp)

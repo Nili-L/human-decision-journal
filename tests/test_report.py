@@ -81,3 +81,13 @@ def test_human_decision_bullets_extracts():
            "**Human-driven decisions:**\n- chose A\n- set bar B\n\n"
            "**AI execution:**\n- did X\n\n**Tags:** domain: backend · activity: design\n")
     assert human_decision_bullets(raw) == ["- chose A", "- set bar B"]
+
+
+from server.report import ai_execution_bullets
+
+def test_ai_execution_bullets_extracts():
+    raw = ("### 2026-06-01 — t\n\n**Session focus:** f\n\n"
+           "**Human-driven decisions:**\n- chose A\n\n"
+           "**AI execution:**\n- wrote code\n- ran tests\n\n"
+           "**Tags:** domain: backend · activity: design\n")
+    assert ai_execution_bullets(raw) == ["- wrote code", "- ran tests"]

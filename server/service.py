@@ -9,6 +9,7 @@ from server import journal as J
 from server import report as R
 from server import coverage as CV
 from server import digest as DG
+from server import labor as LB
 from server.timeline import build_timeline, firsts
 from server.ownership import resolve_repo_path, is_collaboration
 from server import gitops
@@ -174,6 +175,26 @@ class JournalService:
             spans = ", ".join(f"{f.kind}:{f.value!r}" for f in findings[:8])
             return {"status": "blocked", "message": f"digest blocked (customer data): {spans}."}
         return {"status": "ok", "digest": report, "stats": stats}
+
+    def division_of_labor(self, *, period="month", basis="to-date", since=None, until=None,
+                          scope="all", detail="summary") -> dict:
+        import datetime
+        scope = "work" if scope.lower() == "work" else "all"
+        detail = "entries" if detail == "entries" else "summary"
+        s, u, label = DG.period_window(period, basis, since, until, datetime.date.today())
+        jr = self._load_journal()
+
+        def in_scope(e):
+            return scope == "all" or jr.repo_category.get(e.repo) == "Work"
+
+        selected = [e for e in jr.entries if in_scope(e) and s <= e.date <= u]
+        report, stats = LB.build_labor_report(self.cfg.owner_name, selected,
+                                              scope=scope, label=label, detail=detail)
+        findings = self._scan_all(report)
+        if findings:
+            spans = ", ".join(f"{f.kind}:{f.value!r}" for f in findings[:8])
+            return {"status": "blocked", "message": f"labor report blocked (customer data): {spans}."}
+        return {"status": "ok", "report": report, "stats": stats}
 
     def list_tags(self) -> dict:
         v = self._vocab()
